@@ -18,10 +18,7 @@ router.post('/login',(req, res) => {
             if(error){
                 res.send(fail(error));
             }else{
-                res.send(success({
-                    data:data,
-                    accounts: accounts
-                }))
+                res.send(success(data));
             }
         })
     })
@@ -29,16 +26,22 @@ router.post('/login',(req, res) => {
 
 router.post('/register',(req,res) => {
     let {tel, email, password} = req.body;
-
     let params = {tel:tel,email:email,password:password};
-
     user_api.register(params, (error, data) => {
         if(error){
             res.send(fail(error));
         }else{
-            res.send(success(data))
+            if(data.affectedRows > 0){
+                res.send(success({message:"注册成功"}))
+            }else{
+                res.send(success(data))
+            }
         }
     })
+})
+
+router.get('/info', (req, res) => {
+    res.send(success(req.query.userinfo));
 })
 
 // /balance?id=1&name=wewrwe
@@ -47,8 +50,8 @@ router.post('/register',(req,res) => {
  * 查询用户eth余额
  */
 router.get('/balance',(req, res) => {
-    let {id} = req.query;
-    user_api.getUserEthBalance(id,(error,data) => {
+    let {userinfo} = req.query;
+    user_api.getUserEthBalance(userinfo.id,(error,data) => {
         if(error){
             res.send(fail(error));
         }else{
@@ -62,6 +65,44 @@ router.post('/buycoin', (req,res) => {
     //购买数量和购买者地址
     let {count,address} = req.body;
     user_api.buyCoin(address,count,(error,data) => {
+        if(error){
+            res.send(fail(error));
+        }else{
+            res.send(success(data))
+        }
+    })
+})
+
+// 挂单1 要用 10个ETHER 换 1000 MT
+// 挂单2 要用 1000 MT 换 10个ETHER
+// 挂单之后找到可以匹配的交易
+// 然后转账(1的10个Ehter => 2, 2的1000MT转给1)
+
+// 挂单1 要用 10个ETHER 换 1000 MT
+// 挂单2 要用 1000 MT 换 9个ETHER
+// 挂单之后找到可以匹配的交易
+// 然后转账(1的10个Ehter => 2, 2的1000MT转给1)
+// 中间商赚差价(把剩下的币转到中间商的账户)
+
+
+// 目的 => 卖出或者买入代币(收获或者付出ether)
+// 只有代币的数量匹配才能够交易
+
+// 1000 MT  A 要 400MT  B 要600MT => 拆单
+
+router.post('/addorder', (req, res) => {
+    user_api.addOrder(req.body,(error,data)=>{
+        if(error){
+            res.send(fail(error));
+        }else{
+            res.send(success(data))
+        }
+    })
+})
+
+// 获取个人账单
+router.get('/orders', (req,res) => {
+    user_api.getMyOrder(req.query, (error,data) => {
         if(error){
             res.send(fail(error));
         }else{

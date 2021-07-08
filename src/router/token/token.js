@@ -31,8 +31,25 @@ router.post('/addtoken',(req, res) => {
     })
 })
 
+/**
+ * 转账代币
+ */
 router.post('/transtoken', (req, res) => {
     token_api.transToken((error,data) => {
+        if(error){
+            res.send(fail(error));
+        }else{
+            res.send(success(data))
+        }
+    })
+})
+
+/**
+ * 
+ */
+router.post('/transtoaddress', (req, res) => {
+    let {toaddress:address, count, userinfo, tokenaddress} = req.body;
+    token_api.transTokenToAddress(address,count,userinfo,tokenaddress,(error,data) => {
         if(error){
             res.send(fail(error));
         }else{

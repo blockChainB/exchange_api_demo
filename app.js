@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 // 打印 http 请求
 const morgan = require('morgan');
 const jwt = require('jsonwebtoken');
+var cors = require('cors')
+
 // 导入路由表
 const user = require('./src/router/user/user');
 const token = require('./src/router/token/token');
@@ -13,7 +15,19 @@ const sqlhelper = require('./src/comman/sqlhelper');
 
 // express() 方法构造一个实例对象
 const app = express();
-
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With,token');
+    // res.header('Access-Control-Allow-Credentials','true');
+    if(req.method == "OPTIONS") {
+        res.send(200);
+    }else{
+        next();
+    }
+  };
+app.use(cors())
+// app.use(allowCrossDomain);
 // 打印http 请求日志
 app.use(morgan('dev'));
 // 解析post 请求中的body
@@ -28,7 +42,10 @@ app.use('*',(req, res, next) => {
     let token = header.token;
     jwt.verify(token, secort, function(err, decoded) {
         if(err){
-            res.send({errmsg:"token错误"})
+            res.send({
+                errmsg:"token错误",
+                errcode: 1000
+            })
         }else{
             let userid = decoded.id;
             let sql = 'select * from user where id = ?';
@@ -37,8 +54,10 @@ app.use('*',(req, res, next) => {
                 // post req.body
                 // "GET" => "get"
                 if(req.method.toLocaleLowerCase() === 'get'){
+                    req.query.userinfo = data[0];
                     req.query.address = data[0].ethaddress;
                 }else{
+                    req.body.userinfo = data[0];
                     req.body.address = data[0].ethaddress;
                 }
                 next();
